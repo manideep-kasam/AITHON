@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Finance Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e3f2fd, #ede7f6);
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background: #6a1b9a;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    .container { width: 90%; margin: 20px auto; }
+    .cards {
+      display: flex; justify-content: space-around; flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: white; padding: 20px; border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      text-align: center; width: 30%; margin: 10px;
+    }
+    .alert, .goal, .reminders, .guardian, .form-box {
+      background: white; padding: 15px; border-radius: 10px;
+      margin: 15px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .progress-bar {
+      height: 15px; background: #ddd; border-radius: 10px;
+      overflow: hidden; margin: 5px 0;
+    }
+    .progress { height: 100%; background: #ff7043; width: 0; }
+    button {
+      background: #ec407a; border: none; color: white;
+      padding: 10px 15px; border-radius: 5px; cursor: pointer;
+    }
+    button:hover { background: #d81b60; }
+    input, select {
+      padding: 8px; margin: 5px; border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    canvas { margin: 20px auto; display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎓 Student Finance Manager</h1>
+    <p>"Save today, secure tomorrow 🌱 | Stay focused on academics 📖"</p>
+  </header>
+
+  <div class="container">
+    <!-- Summary Cards -->
+    <div class="cards">
+      <div class="card">
+        <h3>💰 Total Income</h3>
+        <p id="income">₹0</p>
+      </div>
+      <div class="card">
+        <h3>💸 Total Expenses</h3>
+        <p id="expenses">₹0</p>
+      </div>
+      <div class="card">
+        <h3>📉 Balance</h3>
+        <p id="balance">₹0</p>
+      </div>
+    </div>
+
+    <!-- Add Transaction Form -->
+    <div class="form-box">
+      <h3>➕ Add Transaction</h3>
+      <input type="text" id="desc" placeholder="Description">
+      <input type="number" id="amount" placeholder="Amount">
+      <select id="type">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+      <select id="category">
+        <option value="Food">Food</option>
+        <option value="Books">Books</option>
+        <option value="Travel">Travel</option>
+        <option value="Entertainment">Entertainment</option>
+      </select>
+      <button onclick="addTransaction()">Add</button>
+    </div>
+
+    <!-- Expense Categorization -->
+    <div class="alert">
+      <h3>📂 Expense Breakdown</h3>
+      <canvas id="expenseChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Budget Alerts -->
+    <div class="alert">
+      <h3>🚨 Budget Alerts</h3>
+      <p>Food Budget (₹1500)</p>
+      <div class="progress-bar"><div class="progress" id="foodProgress"></div></div>
+      <small id="foodAlert"></small>
+    </div>
+
+    <!-- Goal Tracking -->
+    <div class="goal">
+      <h3>🎯 Goal Tracking</h3>
+      <p>Save ₹10,000 by Dec</p>
+      <div class="progress-bar"><div class="progress" id="goalProgress" style="background:#66bb6a;"></div></div>
+      <small id="goalText">Progress: 0%</small>
+    </div>
+
+    <!-- Reminders -->
+    <div class="reminders">
+      <h3>📅 Reminders</h3>
+      <ul>
+        <li>Pay hostel rent on 15th</li>
+        <li>Library fine due next week</li>
+        <li>Internet bill payment on 20th</li>
+      </ul>
+    </div>
+
+    <!-- Guardian Connection -->
+    <div class="guardian">
+      <h3>👨‍👩‍👧 Parent/Guardian Connection</h3>
+      <p>Share monthly reports and alerts with your parents or guardian.</p>
+      <button>Connect Now</button>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    let categories = { Food: 0, Books: 0, Travel: 0, Entertainment: 0 };
+
+    const ctx = document.getElementById('expenseChart');
+    let chart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: Object.keys(categories),
+        datasets: [{
+          data: Object.values(categories),
+          backgroundColor: ['#66bb6a','#42a5f5','#ff7043','#ab47bc']
+        }]
+      }
+    });
+
+    function updateUI() {
+      document.getElementById("income").innerText = "₹" + totalIncome;
+      document.getElementById("expenses").innerText = "₹" + totalExpenses;
+      document.getElementById("balance").innerText = "₹" + (totalIncome - totalExpenses);
+
+      // Update chart
+      chart.data.datasets[0].data = Object.values(categories);
+      chart.update();
+
+      // Food budget alert
+      let foodBudget = 1500;
+      let foodUsed = (categories["Food"] / foodBudget) * 100;
+      document.getElementById("foodProgress").style.width = foodUsed + "%";
+      document.getElementById("foodAlert").innerText =
+        foodUsed >= 100 ? "❌ Food budget exceeded!" :
+        foodUsed >= 80 ? "⚠️ Almost exceeding Food budget!" :
+        "✅ Within budget";
+
+      // Goal tracking
+      let balance = totalIncome - totalExpenses;
+      let goal = 10000;
+      let progress = Math.min((balance / goal) * 100, 100);
+      document.getElementById("goalProgress").style.width = progress + "%";
+      document.getElementById("goalText").innerText = "Progress: " + progress.toFixed(1) + "%";
+    }
+
+    function addTransaction() {
+      let desc = document.getElementById("desc").value;
+      let amount = parseFloat(document.getElementById("amount").value);
+      let type = document.getElementById("type").value;
+      let category = document.getElementById("category").value;
+
+      if (!desc || isNaN(amount) || amount <= 0) {
+        alert("Enter valid details");
+        return;
+      }
+
+      if (type === "income") {
+        totalIncome += amount;
+      } else {
+        totalExpenses += amount;
+        categories[category] += amount;
+      }
+
+      updateUI();
+      document.getElementById("desc").value = "";
+      document.getElementById("amount").value = "";
+    }
+  </script>
+</body>
+</html>
